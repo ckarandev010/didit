@@ -11,8 +11,23 @@ import sys
 
 from . import __version__
 from .check import check_turn
+from .claims import extract
 from .report import to_json, to_text
 from .transcript import load
+
+
+def _extractor(args):
+    if not getattr(args, "llm", False):
+        return extract
+    from .llm import LLMUnavailable, extract_hybrid
+
+    def hybrid(summary):
+        try:
+            return extract_hybrid(summary, model=args.model)
+        except LLMUnavailable as exc:
+            print(f"didit: {exc}; using rules only", file=sys.stderr)
+            return extract(summary)
+    return hybrid
 
 
 def _cmd_check(args) -> int:
@@ -30,7 +45,8 @@ def _cmd_check(args) -> int:
     else:
         chosen = [turns[-1]]
 
-    reports = [check_turn(t, check_files=args.check_files) for t in chosen]
+    extractor = _extractor(args)
+    reports = [check_turn(t, check_files=args.check_files, extractor=extractor) for t in chosen]
     if args.all and not args.verbose:
         reports = [r for r in reports if not r.clean or r.unverified] or reports[-1:]
     if args.json:
@@ -57,7 +73,7 @@ def _cmd_hook(args) -> int:
         return 0
     if not turns:
         return 0
-    report = check_turn(turns[-1])
+    report = check_turn(turns[-1], extractor=_extractor(args))
     if report.clean and not (args.strict and report.unverified):
         return 0
     problems = [f"- {f.verdict}: \"{f.claim.text}\" ({f.reason})" for f in report.contradicted]
@@ -81,10 +97,14 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--json", action="store_true", help="machine-readable output")
     p.add_argument("--verbose", "-v", action="store_true", help="also show verified claims")
     p.add_argument("--check-files", action="store_true", help="confirm claimed files still exist on disk")
+    p.add_argument("--llm", action="store_true", help="also find claims with a local model (Ollama)")
+    p.add_argument("--model", help="Ollama model (default: $DIDIT_MODEL or qwen2.5:7b-instruct)")
     p.set_defaults(func=_cmd_check)
 
     h = sub.add_parser("hook", help="run as a Claude Code Stop hook (reads JSON on stdin)")
     h.add_argument("--strict", action="store_true", help="block the stop and send problems back to the agent")
+    h.add_argument("--llm", action="store_true", help="also find claims with a local model (Ollama)")
+    h.add_argument("--model", help="Ollama model")
     h.set_defaults(func=_cmd_hook)
 
     args = parser.parse_args(argv)

@@ -19,7 +19,7 @@ SUPPORT = {
     "delete": {"delete", "command"},
     "build": {"build", "command"},
     "file_write": {"file_write", "command", "other", "draft"},
-    "command": {"command", "build", "install", "test", "other"},
+    "command": {"command", "build", "install", "test", "other", "git_push", "git_commit", "delete"},
 }
 
 _TEST_RESULT_WORDS = re.compile(r"\bpass(es|ed|ing)?\b|\bgreen\b", re.I)
@@ -104,8 +104,9 @@ def _verdict(claim: Claim, turn: Turn, check_files: bool) -> Finding:
 _ADMITS_FAILURE = re.compile(r"\b(fail(ed|s|ure)?|error|could(n't| not)|unable|did(n't| not)|broke|blocked|not yet)\b", re.I)
 
 
-def check_turn(turn: Turn, check_files: bool = False) -> Report:
-    findings = [_verdict(c, turn, check_files) for c in extract(turn.summary)]
+def check_turn(turn: Turn, check_files: bool = False, extractor=extract) -> Report:
+    """Check one turn. `extractor` turns the summary into claims (rules by default; see didit.llm)."""
+    findings = [_verdict(c, turn, check_files) for c in extractor(turn.summary)]
     unreported = []
     if not _ADMITS_FAILURE.search(turn.summary):
         unreported = [a for a in turn.actions

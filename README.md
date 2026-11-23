@@ -65,6 +65,21 @@ didit check SESSION.jsonl --check-files        # also confirm claimed files stil
 
 Exit code is `1` when anything is contradicted or a failure went unreported, so it can gate CI.
 
+### Finding more claims with a local model
+
+Rules miss claims phrased without an agent verb ("The changes are now on GitHub"). Add `--llm` to also ask a local
+model through [Ollama](https://ollama.com):
+
+```
+ollama pull qwen2.5:7b-instruct
+didit check SESSION.jsonl --llm
+```
+
+The model only finds claims; verdicts still come from the deterministic checks. Every claim the model returns must
+quote a sentence that really appears in the agent's message, so an invented claim is dropped. If Ollama is not
+running, didit falls back to rules. Settings: `DIDIT_MODEL`, `DIDIT_OLLAMA_HOST` (default `http://localhost:11434`).
+Answers are cached in `~/.cache/didit`.
+
 ### As a Claude Code hook
 
 Run `didit` automatically every time the agent finishes. Add to `.claude/settings.json`:
@@ -97,26 +112,39 @@ write the run in this neutral format and point `didit` at the `.json` file:
 
 ## Benchmark
 
-**Synthetic** ([full results](bench/RESULTS.md)): 180 generated agent turns with known truth, 150 claims (half true,
-half false) across tests, commits, pushes, file edits and installs. Phrasings deliberately include ones the rules
-are not built to recognise.
+Synthetic agent turns with known truth: every claim is labelled true or false, and false claims fail in realistic
+ways (tests failing, pushes rejected, edits not applied, commands that never ran, deploys that errored).
+Two sets: the **tuning set** (180 turns, 165 claims) that the rules and filters were developed against, and a
+**held-out set** (108 turns, 93 claims) with new phrasings, written after tuning and scored once.
+The held-out set is the honest number.
 
-| | v0.1 |
-|---|---|
-| False claims caught, of those it extracted | **100%** |
-| False alarms on true claims | **0%** |
-| `contradicted` verdicts that were really false | **100%** |
-| Claims extracted at all (extraction recall) | 68% |
-| Silent failures reported / admitted failures wrongly reported | 15/15 · 0/15 |
+| Held-out set | Rules only | Rules + local model |
+|---|---|---|
+| Claims found at all (extraction recall) | 19% | **86%** |
+| False claims caught | 17% | **87%** |
+| False alarms on true claims | 0% | **0%** |
+| `contradicted` verdicts that were really false | 100% | **100%** |
+| Non-claim sentences taken as claims | 0 | 26 |
+| Silent failures reported / admitted failures wrongly reported | 15/15 · 0/15 | 15/15 · 0/15 |
 
-The weak spot is extraction: claims phrased without an agent verb ("The changes are now on GitHub",
-"`app.py` now handles the empty case") are not picked up yet. Reproduce with:
+On the tuning set: rules only 62% recall, rules + model 96% recall and 97% of false claims caught, 0 false alarms.
+Full tables: [rules](bench/RESULTS.md) · [rules + model](bench/RESULTS_LLM.md) ·
+[held-out, rules](bench/RESULTS_HOLDOUT.md) · [held-out, rules + model](bench/RESULTS_LLM_HOLDOUT.md).
+
+What this says: **when didit judges a claim it is reliable** (no true claim flagged, every `contradicted` correct);
+the open problem is *finding* claims. Rules are precise but only know the phrasings they were written for; the
+local model finds most of the rest, and on held-out text it also picks up some instructions and descriptions
+("Run `npm test` whenever...", "Tests live in tests/"). Those land as `unverified`, never `contradicted`, so they
+cost noise rather than false accusations. Fixing them needs a fresh held-out set, not tuning on this one.
+
+Reproduce (the model runs take a few minutes on a laptop GPU; results are cached):
 
 ```
-python bench/synthetic.py && python bench/run.py
+python bench/synthetic.py
+python bench/run.py [--llm] [--holdout]
 ```
 
-Writing the benchmark found two real bugs, now fixed with regression tests: "45 passed, 0 failed" was skipped as an
+Writing the benchmark found real bugs, now fixed with regression tests: "45 passed, 0 failed" was skipped as an
 admitted failure, and reading a file (`cat README.md`) counted as evidence it had been changed.
 
 **Real sessions**: `bench/real.py` samples claims from your own session logs into a private, git-ignored sheet to
@@ -126,8 +154,8 @@ will be added here.
 
 ## Limits (v0.1)
 
-- Claim extraction is rule-based English. It misses claims phrased unusually and sometimes flags narrative
-  sentences as claims.
+- Claim extraction is English only. Rules miss unusual phrasings; the optional model finds most of them but also
+  flags some instructions and descriptions as claims (as `unverified`).
 - A claim is matched by kind and by the names it mentions. It cannot tell *what* an edit changed, only that a
   matching edit succeeded.
 - Work done through tools that return nothing (or through other tools' side effects) shows as unverified.
@@ -136,7 +164,7 @@ will be added here.
 ## Roadmap
 
 - Labelled benchmark of real claims with precision and recall published here.
-- Optional local-model claim extraction (Ollama) for claims rules miss.
+- Cut the model's false extractions (instructions and descriptions), measured on a new held-out set.
 - Readers for more agent log formats (Codex CLI, Cursor, OpenAI Agents SDK traces).
 - Content checks: "renamed X to Y" confirmed against the actual diff.
 

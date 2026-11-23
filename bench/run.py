@@ -33,26 +33,43 @@ def to_turn(case) -> Turn:
     return turn
 
 
+def norm(text):
+    return " ".join(text.replace("`", "").split()).lower()
+
+
 def pct(a, b):
     return f"{100 * a / b:.0f}%" if b else "n/a"
 
 
 def main():
-    cases = json.loads((HERE / "cases.json").read_text(encoding="utf-8"))
+    use_llm = "--llm" in sys.argv
+    extractor = None
+    if use_llm:
+        from didit.llm import extract_hybrid
+        extractor = extract_hybrid
+    holdout = "--holdout" in sys.argv
+    cases = json.loads((HERE / ("holdout.json" if holdout else "cases.json")).read_text(encoding="utf-8"))
     rows = defaultdict(lambda: defaultdict(int))
     misses = []
     spurious = 0
     uf = {"silent_total": 0, "silent_found": 0, "admitted_total": 0, "admitted_flagged": 0}
 
     for case in cases:
-        report = check_turn(to_turn(case))
-        found = {f.claim.kind: f for f in report.findings}
+        report = check_turn(to_turn(case), extractor=extractor) if extractor else check_turn(to_turn(case))
+        findings = list(report.findings)
 
         for t in case["truth"]:
             r = rows[t["kind"]]
             key = "true" if t["true"] else "false"
             r[f"{key}_total"] += 1
-            f = found.pop(t["kind"], None)
+            # Match by sentence: the kind label is the extractor's guess, the sentence is the claim.
+            same = [x for x in findings if norm(x.claim.text) == norm(t["sentence"])]
+            preferred = [x for x in same if x.claim.kind == t["kind"]] or same
+            f = preferred[0] if preferred else None
+            if same and t["kind"] in {"git_push", "git_commit", "test", "install"}:
+                findings = [x for x in findings if x not in same or x.claim.kind not in (t["kind"], "command", "file_write")]
+            else:
+                findings = [x for x in findings if x not in same]
             if f is None:
                 r[f"{key}_missed"] += 1
                 if t["rule_findable"]:
@@ -63,7 +80,8 @@ def main():
             r[f"{key}_contradicted"] += f.verdict == "contradicted"
             if not t["true"] and not flagged:
                 misses.append((case["id"], f"PASSED A FALSE CLAIM ({t['why_false']}): {t['sentence']}"))
-        spurious += len(found)          # claims extracted from sentences that were not claims
+        truth_sentences = {norm(t["sentence"]) for t in case["truth"]}
+        spurious += sum(norm(x.claim.text) not in truth_sentences for x in findings)  # non-claims taken as claims
 
         if "unreported_failure" in case:
             if case["unreported_failure"]:
@@ -106,7 +124,10 @@ def main():
             "agents make false claims. Results on real sessions are reported separately."]
     if misses:
         out += ["", "## Misses worth fixing", ""] + [f"- `{cid}` {text}" for cid, text in misses[:25]]
-    (HERE / "RESULTS.md").write_text("\n".join(out) + "\n", encoding="utf-8")
+    mode = ("rules + local model" if use_llm else "rules only") + (", HELD-OUT phrasings" if holdout else "")
+    out[0] = f"# Synthetic benchmark results: {mode}"
+    name = "RESULTS" + ("_LLM" if use_llm else "") + ("_HOLDOUT" if holdout else "")
+    (HERE / f"{name}.md").write_text("\n".join(out) + "\n", encoding="utf-8")
     print("\n".join(out))
 
 

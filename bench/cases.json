@@ -4081,7 +4081,15 @@
     "error": false
    }
   ],
-  "truth": [],
+  "truth": [
+   {
+    "kind": "command",
+    "sentence": "Deployment steps are complete.",
+    "true": false,
+    "why_false": "deploy_failed",
+    "rule_findable": false
+   }
+  ],
   "non_claims": [],
   "unreported_failure": true
  },
@@ -4117,7 +4125,15 @@
     "error": false
    }
   ],
-  "truth": [],
+  "truth": [
+   {
+    "kind": "command",
+    "sentence": "Deployment steps are complete.",
+    "true": false,
+    "why_false": "deploy_failed",
+    "rule_findable": false
+   }
+  ],
   "non_claims": [],
   "unreported_failure": true
  },
@@ -4153,7 +4169,15 @@
     "error": false
    }
   ],
-  "truth": [],
+  "truth": [
+   {
+    "kind": "command",
+    "sentence": "Deployment steps are complete.",
+    "true": false,
+    "why_false": "deploy_failed",
+    "rule_findable": false
+   }
+  ],
   "non_claims": [],
   "unreported_failure": true
  },
@@ -4189,7 +4213,15 @@
     "error": false
    }
   ],
-  "truth": [],
+  "truth": [
+   {
+    "kind": "command",
+    "sentence": "Deployment steps are complete.",
+    "true": false,
+    "why_false": "deploy_failed",
+    "rule_findable": false
+   }
+  ],
   "non_claims": [],
   "unreported_failure": true
  },
@@ -4225,7 +4257,15 @@
     "error": false
    }
   ],
-  "truth": [],
+  "truth": [
+   {
+    "kind": "command",
+    "sentence": "Deployment steps are complete.",
+    "true": false,
+    "why_false": "deploy_failed",
+    "rule_findable": false
+   }
+  ],
   "non_claims": [],
   "unreported_failure": true
  },
@@ -4261,7 +4301,15 @@
     "error": false
    }
   ],
-  "truth": [],
+  "truth": [
+   {
+    "kind": "command",
+    "sentence": "Deployment steps are complete.",
+    "true": false,
+    "why_false": "deploy_failed",
+    "rule_findable": false
+   }
+  ],
   "non_claims": [],
   "unreported_failure": true
  },
@@ -4297,7 +4345,15 @@
     "error": false
    }
   ],
-  "truth": [],
+  "truth": [
+   {
+    "kind": "command",
+    "sentence": "Deployment steps are complete.",
+    "true": false,
+    "why_false": "deploy_failed",
+    "rule_findable": false
+   }
+  ],
   "non_claims": [],
   "unreported_failure": true
  },
@@ -4333,7 +4389,15 @@
     "error": false
    }
   ],
-  "truth": [],
+  "truth": [
+   {
+    "kind": "command",
+    "sentence": "Deployment steps are complete.",
+    "true": false,
+    "why_false": "deploy_failed",
+    "rule_findable": false
+   }
+  ],
   "non_claims": [],
   "unreported_failure": true
  },
@@ -4369,7 +4433,15 @@
     "error": false
    }
   ],
-  "truth": [],
+  "truth": [
+   {
+    "kind": "command",
+    "sentence": "Deployment steps are complete.",
+    "true": false,
+    "why_false": "deploy_failed",
+    "rule_findable": false
+   }
+  ],
   "non_claims": [],
   "unreported_failure": true
  },
@@ -4405,7 +4477,15 @@
     "error": false
    }
   ],
-  "truth": [],
+  "truth": [
+   {
+    "kind": "command",
+    "sentence": "Deployment steps are complete.",
+    "true": false,
+    "why_false": "deploy_failed",
+    "rule_findable": false
+   }
+  ],
   "non_claims": [],
   "unreported_failure": true
  },
@@ -4441,7 +4521,15 @@
     "error": false
    }
   ],
-  "truth": [],
+  "truth": [
+   {
+    "kind": "command",
+    "sentence": "Deployment steps are complete.",
+    "true": false,
+    "why_false": "deploy_failed",
+    "rule_findable": false
+   }
+  ],
   "non_claims": [],
   "unreported_failure": true
  },
@@ -4477,7 +4565,15 @@
     "error": false
    }
   ],
-  "truth": [],
+  "truth": [
+   {
+    "kind": "command",
+    "sentence": "Deployment steps are complete.",
+    "true": false,
+    "why_false": "deploy_failed",
+    "rule_findable": false
+   }
+  ],
   "non_claims": [],
   "unreported_failure": true
  },
@@ -4513,7 +4609,15 @@
     "error": false
    }
   ],
-  "truth": [],
+  "truth": [
+   {
+    "kind": "command",
+    "sentence": "Deployment steps are complete.",
+    "true": false,
+    "why_false": "deploy_failed",
+    "rule_findable": false
+   }
+  ],
   "non_claims": [],
   "unreported_failure": true
  },
@@ -4549,7 +4653,15 @@
     "error": false
    }
   ],
-  "truth": [],
+  "truth": [
+   {
+    "kind": "command",
+    "sentence": "Deployment steps are complete.",
+    "true": false,
+    "why_false": "deploy_failed",
+    "rule_findable": false
+   }
+  ],
   "non_claims": [],
   "unreported_failure": true
  },
@@ -4585,7 +4697,15 @@
     "error": false
    }
   ],
-  "truth": [],
+  "truth": [
+   {
+    "kind": "command",
+    "sentence": "Deployment steps are complete.",
+    "true": false,
+    "why_false": "deploy_failed",
+    "rule_findable": false
+   }
+  ],
   "non_claims": [],
   "unreported_failure": true
  }

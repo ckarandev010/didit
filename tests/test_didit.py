@@ -201,3 +201,29 @@ def test_reading_a_file_does_not_verify_a_claim_that_it_was_changed(tmp_path):
 def test_ran_the_test_suite_is_a_test_claim():
     kinds = {c.kind for c in extract("I ran the test suite and everything passes.")}
     assert "test" in kinds and "command" not in kinds
+
+
+# ---------- optional local-model extraction (model mocked) ----------
+
+def test_llm_claims_must_quote_the_message_and_rules_win(monkeypatch, tmp_path):
+    from didit import llm
+    monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
+    fake = [{"sentence": "The changes are now on GitHub.", "kind": "git_push"},          # rules miss this
+            {"sentence": "I deployed it to production.", "kind": "command"},             # invented: not in message
+            {"sentence": "I committed the fix.", "kind": "file_write"}]                  # rules already own it
+    monkeypatch.setattr(llm, "_ask", lambda *a, **k: fake)
+    claims = llm.extract_hybrid("I committed the fix. The changes are now on GitHub.")
+    assert [(c.text, c.kind) for c in claims] == [("I committed the fix.", "git_commit"),
+                                                  ("The changes are now on GitHub.", "git_push")]
+
+
+def test_llm_unavailable_falls_back_to_rules(monkeypatch, tmp_path, capsys):
+    from didit import llm
+
+    def down(*a, **k):
+        raise llm.LLMUnavailable("could not reach Ollama")
+    monkeypatch.setattr(llm, "_ask", down)
+    monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
+    path = session(tmp_path, user("t"), call("Bash", {"command": "pytest"}, "3 passed"), say("All tests pass."))
+    assert main(["check", path, "--llm"]) == 0
+    assert "rules only" in capsys.readouterr().err
