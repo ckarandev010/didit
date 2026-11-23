@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+.venv/
+.pytest_cache/
+# never commit real agent sessions: they contain private data
+*.jsonl
+!tests/fixtures/*.jsonl
