@@ -18,7 +18,7 @@ _VERBS = [
     ("install", r"installed"),
     ("delete", r"deleted|removed"),
     ("build", r"built|compiled"),
-    ("test", r"tested|ran (?:the )?(?:\w+ )?tests"),
+    ("test", r"tested|ran (?:the |all )?(?:\w+ )?(?:tests?|test suite|suite|specs)"),
     ("file_write", r"saved|wrote|created|added|updated|edited|fixed|renamed|changed|modified|replaced|refactored|"
                    r"implemented|generated|rendered|moved|marked|logged|recorded|stored"),
     ("command", r"ran|executed|launched|started|restarted|migrated|deployed|configured|verified|confirmed|checked"),
@@ -40,6 +40,8 @@ _NOT_A_CLAIM = re.compile(
     r"\b(?:not|never|failed|unable|couldn't|skipped|didn't|wasn't|isn't|haven't|hasn't|doesn't|don't)\b|n't\b",
     re.I,
 )
+
+_ZERO_FAILURES = re.compile(r"\b(?:0|zero|no) (?:failed|failures?|errors?)\b", re.I)
 
 _BACKTICK = re.compile(r"`([^`]{2,120})`")
 _LINK_TEXT = re.compile(r"\[([^\]]{2,120})\]\([^)]*\)")
@@ -97,7 +99,8 @@ def extract(summary: str) -> list[Claim]:
     claims = []
     for sentence in _sentences(summary):
         spoken = _SPEECH.sub('""', sentence)
-        if _NOT_A_CLAIM.search(spoken):
+        # "0 failed" / "no failures" report success, they are not admissions of failure.
+        if _NOT_A_CLAIM.search(_ZERO_FAILURES.sub(" ", spoken)):
             continue
         kind = _kind(sentence)
         if not kind:

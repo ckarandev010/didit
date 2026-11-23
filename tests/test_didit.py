@@ -180,3 +180,24 @@ def test_hook_is_silent_when_clean_and_never_loops(tmp_path, monkeypatch, capsys
     monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps({"transcript_path": path})))
     assert main(["hook", "--strict"]) == 2
     assert "does not match" in capsys.readouterr().err
+
+
+# ---------- regressions found by the benchmark ----------
+
+def test_zero_failures_is_a_success_claim_not_an_admission():
+    [claim] = extract("45 passed, 0 failed.")
+    assert claim.kind == "test"
+
+
+def test_reading_a_file_does_not_verify_a_claim_that_it_was_changed(tmp_path):
+    path = session(tmp_path,
+                   user("update the readme"),
+                   call("Bash", {"command": "cat README.md"}, "# Project"),
+                   say("I updated `README.md`."))
+    v, _ = verdicts(path)
+    assert list(v.values()) == ["unverified"]
+
+
+def test_ran_the_test_suite_is_a_test_claim():
+    kinds = {c.kind for c in extract("I ran the test suite and everything passes.")}
+    assert "test" in kinds and "command" not in kinds

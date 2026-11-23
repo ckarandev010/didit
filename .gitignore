@@ -8,3 +8,6 @@ dist/
 # never commit real agent sessions: they contain private data
 *.jsonl
 !tests/fixtures/*.jsonl
+
+# private benchmark labels quote real sessions
+bench/private/

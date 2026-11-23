@@ -20,6 +20,11 @@ _COMMAND_KINDS = [
     ("build", re.compile(r"\b(make|cmake --build|npm run build|cargo build|go build|tsc|docker build|idf\.py build)\b")),
 ]
 
+# Shell commands that only look at things. Reading a file is not evidence that it was changed.
+_READ_ONLY = re.compile(r"^\s*(?:cd [^;&|]+(?:&&|;)\s*)?(?:cat|head|tail|less|more|grep|rg|ls|dir|find|wc|stat|file|"
+                        r"diff|type|Get-Content|Get-ChildItem|Select-String|git (?:status|diff|log|show|branch))\b")
+_WRITES = re.compile(r">|\btee\b|\bsed -i\b|-exec\b|\|\s*(?:sh|bash|python)\b")
+
 _FAIL_PATTERNS = [
     (re.compile(r"Exit code [1-9]\d*"), "non-zero exit code"),
     (re.compile(r"^Traceback \(most recent call last\)", re.M), "Python traceback"),
@@ -50,6 +55,9 @@ def classify(action: Action) -> Action:
             if pattern.search(command):
                 action.kind = kind
                 break
+        else:
+            if _READ_ONLY.match(command) and not _WRITES.search(command):
+                action.kind = "file_read"
     elif "send" in tool:
         action.kind = "send"
     elif "draft" in tool:

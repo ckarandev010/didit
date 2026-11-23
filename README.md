@@ -95,11 +95,34 @@ write the run in this neutral format and point `didit` at the `.json` file:
 }
 ```
 
-## Results on real sessions
+## Benchmark
 
-Run over a long personal Claude Code session (1,388 turns), version 0.1 checked 468 claims:
-367 verified, 98 unverified and 3 contradicted, and found 98 failed calls the summaries never mentioned.
-The unverified count includes false alarms (see limits below). A labelled benchmark is the next milestone.
+**Synthetic** ([full results](bench/RESULTS.md)): 180 generated agent turns with known truth, 150 claims (half true,
+half false) across tests, commits, pushes, file edits and installs. Phrasings deliberately include ones the rules
+are not built to recognise.
+
+| | v0.1 |
+|---|---|
+| False claims caught, of those it extracted | **100%** |
+| False alarms on true claims | **0%** |
+| `contradicted` verdicts that were really false | **100%** |
+| Claims extracted at all (extraction recall) | 68% |
+| Silent failures reported / admitted failures wrongly reported | 15/15 · 0/15 |
+
+The weak spot is extraction: claims phrased without an agent verb ("The changes are now on GitHub",
+"`app.py` now handles the empty case") are not picked up yet. Reproduce with:
+
+```
+python bench/synthetic.py && python bench/run.py
+```
+
+Writing the benchmark found two real bugs, now fixed with regression tests: "45 passed, 0 failed" was skipped as an
+admitted failure, and reading a file (`cat README.md`) counted as evidence it had been changed.
+
+**Real sessions**: `bench/real.py` samples claims from your own session logs into a private, git-ignored sheet to
+label by hand, then scores it. Only the aggregate numbers are published. On one long personal session
+(1,388 turns), v0.1 checked 468 claims and found 98 failed calls the summaries never mentioned; labelled results
+will be added here.
 
 ## Limits (v0.1)
 
